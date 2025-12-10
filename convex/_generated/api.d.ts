@@ -8,7 +8,8 @@
  * @module
  */
 
-import type * as use from "../use.js";
+import type * as fileStorage from "../fileStorage.js";
+import type * as user from "../user.js";
 
 import type {
   ApiFromModules,
@@ -17,7 +18,8 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
-  use: typeof use;
+  fileStorage: typeof fileStorage;
+  user: typeof user;
 }>;
 
 /**

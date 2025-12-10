@@ -7,7 +7,7 @@ import { useMutation } from "convex/react";
 
 export default function Home() {
   const { user } = useUser();
-  const createUser = useMutation(api.use.createUser)
+  const createUser = useMutation(api.user.createUser)
 
   useEffect(() => {
     if (user) {
