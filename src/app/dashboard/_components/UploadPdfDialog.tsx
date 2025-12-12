@@ -12,12 +12,13 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useMutation } from "convex/react";
+import { useAction, useMutation } from "convex/react";
 import { useState } from "react";
 import { api } from "../../../../convex/_generated/api";
 import { Loader2Icon } from "lucide-react";
 import { v4 as uuidv4 } from 'uuid';
 import { useUser } from "@clerk/nextjs";
+import axios from "axios";
 
 export default function UploadPdfDialog({ children }: { children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
@@ -29,6 +30,7 @@ export default function UploadPdfDialog({ children }: { children: React.ReactNod
   const generateUploadUrl = useMutation(api.fileStorage.generateUploadUrl);
   const getFileUrl = useMutation(api.fileStorage.getFileUrl);
   const addFile = useMutation(api.fileStorage.addFile);
+  const embedDocument = useAction(api.myAction.ingest);
 
   // 处理文件上传
   const onUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -42,10 +44,13 @@ export default function UploadPdfDialog({ children }: { children: React.ReactNod
   };
 
   const handleSubmit = async () => {
+    if (!file || !fileName) {
+      return;
+    }
     setUploadLoading(true);
-    // 生成文件上传的URL
+    // 1、生成文件上传的URL
     const uploadFileUrl = await generateUploadUrl();
-    // 上传文件
+    // 2、上传文件
     const result = await fetch(uploadFileUrl, {
       method: "POST",
       headers: { "Content-Type": file?.type || "" },
@@ -54,16 +59,27 @@ export default function UploadPdfDialog({ children }: { children: React.ReactNod
     const { storageId } = await result.json();
     const fileUrl = await getFileUrl({ storageId })
     console.log(storageId, '文件上传成功');
-    // 提交文件信息到数据库
+    // 3、提交文件信息到数据库
+    const fileId = uuidv4();
     await addFile({
-      fileId: uuidv4(),
+      fileId: fileId,
       storageId: storageId,
       fileName: fileName ?? '无标题PDF',
       fileUrl: fileUrl,
       createdBy: user?.primaryEmailAddress?.emailAddress || "",
     });
+    // 4、获取到PDF文件内容进行pdf文件切片处理
+    const apiRes = await axios.get('/api/pdf-loader?pdfUrl=' + fileUrl);
+    // console.log(apiRes.data.result, 'apiRes');
+    // 5、调用大模型，矢量处理pdf文件
+    embedDocument({
+      splitText: apiRes.data.result,
+      fileId: fileId,
+    });
     setUploadLoading(false);
     setOpen(false);
+    setFile(null);
+    setFileName("");
   };
 
   return (
