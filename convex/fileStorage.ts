@@ -1,5 +1,5 @@
 import { v } from "convex/values";
-import { mutation } from "./_generated/server";
+import { mutation, query } from "./_generated/server";
 
 export const generateUploadUrl = mutation({
   args: {},
@@ -35,5 +35,15 @@ export const getFileUrl = mutation({
   handler: async (ctx, args) => {
     const { storageId } = args;
     return await ctx.storage.getUrl(storageId) || '';
+  }
+})
+
+export const getFileInfoByFileId = query({
+  args: {
+    fileId: v.string()
+  },
+  handler: async (ctx, args) => {
+    const { fileId } = args;
+    return await ctx.db.query('pdfFiles').filter(q => q.eq(q.field('fileId'), fileId)).first();
   }
 })
