@@ -14,12 +14,32 @@ export const ingest = action({
       args.splitText,
       { fileId: args.fileId },
       new GoogleGenerativeAIEmbeddings({
-        apiKey: "AIzaSyDVdtHZ72ioqSwBnypUTN9YYdIy_95dySw",
+        apiKey: "AIzaSyBxE32NqUjvEUF97KRR4xc6d35618XrwPQ",
         model: "text-embedding-004",
         taskType: TaskType.RETRIEVAL_DOCUMENT,
         title: "Document title",
       }),
       { ctx }
     );
+  },
+});
+
+export const search = action({
+  args: {
+    query: v.string(),
+    fileId: v.string()
+  },
+  handler: async (ctx, args) => {
+    const vectorStore = new ConvexVectorStore(new GoogleGenerativeAIEmbeddings({
+      apiKey: "AIzaSyBxE32NqUjvEUF97KRR4xc6d35618XrwPQ",
+      model: "text-embedding-004",
+      taskType: TaskType.RETRIEVAL_DOCUMENT,
+      title: "Document title",
+    }), { ctx });
+    console.log(args.query, args.fileId, 'xxx');
+
+    const resultOne = (await vectorStore.similaritySearch(args.query, 1));
+    console.log(resultOne);
+    return JSON.stringify(resultOne);
   },
 });

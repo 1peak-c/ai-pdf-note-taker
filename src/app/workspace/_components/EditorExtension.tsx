@@ -1,8 +1,13 @@
 import { Editor, EditorContent, useEditorState } from "@tiptap/react";
-import { Bold, Heading1, Heading2, Heading3, Highlighter, Italic, List, ListOrdered, TextAlignCenter, TextAlignEnd, TextAlignStart, Underline } from "lucide-react";
+import { useAction } from "convex/react";
+import { Bold, Heading1, Heading2, Heading3, Highlighter, Italic, List, ListOrdered, Sparkle, TextAlignCenter, TextAlignEnd, TextAlignStart, Underline } from "lucide-react";
+import { api } from "../../../../convex/_generated/api";
+import { useParams } from "next/navigation";
 
 
 export default function EditorExtension({ editor }: { editor: Editor }) {
+  const searchAi = useAction(api.myAction.search)
+  const { fileId } = useParams<{ fileId: string }>();
   const editorState = useEditorState({
     editor,
     selector: ({ editor }: { editor: Editor }) => ({
@@ -20,6 +25,17 @@ export default function EditorExtension({ editor }: { editor: Editor }) {
       isTextAlignRight: editor.isActive({ textAlign: 'right' }),
     }),
   })
+  const onAiClick = async () => {
+    // 1、获取选中的文本
+    const selectText = editor.state.doc.textBetween(
+      editor.state.selection.from,
+      editor.state.selection.to,
+      '\n'
+    )
+    const searchRes = await searchAi({ query: selectText, fileId: fileId })
+    console.log(searchRes, 'searchRes');
+
+  }
   return (
     <div>
       <div className="control-group">
@@ -95,6 +111,12 @@ export default function EditorExtension({ editor }: { editor: Editor }) {
             className={editorState.isTextAlignRight ? 'text-blue-500' : ''}
           >
             <TextAlignEnd />
+          </button>
+          <button
+            onClick={() => onAiClick()}
+            className={'hover:text-blue-500'}
+          >
+            <Sparkle />
           </button>
         </div>
       </div>
